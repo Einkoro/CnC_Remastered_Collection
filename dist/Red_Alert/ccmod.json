@@ -1,0 +1,9 @@
+{
+	"name": "Einkoro's Collection for RA",
+	"description": "Compilation of fixes, QoL mods, etc for Red Alert",
+	"author": "Einkoro",
+	"load_order": 1,
+	"version_low": 2,
+	"version_high": 1,
+	"game_type": "RA"
+}
