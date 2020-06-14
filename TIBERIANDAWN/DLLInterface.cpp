@@ -1708,6 +1708,7 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Save_Load(bool save, const cha
 		}
 
 		DLLExportClass::Set_Player_Context(DLLExportClass::GlyphxPlayerIDs[0], true);
+		DLLExportClass::Recalculate_Placement_Distances(); //FluffyQuack: This makes the 1-gap building mod work with savegames created without the mod running
 		Set_Logic_Page(SeenBuff);
 		VisiblePage.Clear();
 		Map.Flag_To_Redraw(true);
@@ -4412,6 +4413,20 @@ void DLLExportClass::Calculate_Placement_Distances(BuildingTypeClass* placement_
 					CELL adjcell = Adjacent_Cell(cell, facing);
 					if (Map.In_Radar(adjcell)) {
 						placement_distance[adjcell] = min(placement_distance[adjcell], 1U);
+					}
+
+					//[One-Cell Gap] FluffyQuack: Repeat of above to let building placements be allowed by one extra tile
+					{
+						for (FacingType newfacing = FACING_N; newfacing < FACING_COUNT; newfacing++) {
+							CELL newadjcell = Adjacent_Cell(adjcell, newfacing);
+
+							//Out of bounds check
+							if (newadjcell < 0 || newadjcell >= MAP_CELL_TOTAL) continue;
+
+							if (Map.In_Radar(newadjcell)) {
+								placement_distance[newadjcell] = min(placement_distance[newadjcell], 1U);
+							}
+						}
 					}
 				}
 			}

@@ -5522,6 +5522,24 @@ bool BuildingClass::Passes_Proximity_Check(CELL homecell)
 			if (base && base->House->Class->House == House->Class->House) {
 				return(true);
 			}
+
+			//[One-Cell Gap] FluffyQuack: Repeat the above loop so we check one cell further away
+			for (FacingType newfacing = FACING_N; newfacing < FACING_COUNT; newfacing++) {
+				CELL	newercell = Adjacent_Cell(newcell, newfacing);
+
+				// Out of bounds check
+				if (newercell < 0 || newercell >= MAP_CELL_TOTAL) continue;
+
+				BuildingClass * base = Map[newercell].Cell_Building();
+
+				if (Map[newercell].Owner == House->Class->House) {
+					return(true);
+				}
+
+				if (base && base->House->Class->House == House->Class->House) {
+					return(true);
+				}
+			}
 		}
 	}
 	return(false);
