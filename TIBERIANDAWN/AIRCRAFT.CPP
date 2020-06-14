@@ -2272,7 +2272,7 @@ int AircraftClass::Mission_Attack(void)
 		**	Double check target and validate the attack zone.
 		*/
 		case VALIDATE_AZ:
-			if (!Target_Legal(TarCom)) {
+			if (!Target_Legal(TarCom) || !Ammo) {	// RTB to reload if no ammo instead of flying there first
 				Status = RETURN_TO_BASE;
 			} else {
 				Status = PICK_ATTACK_LOCATION;
