@@ -3,7 +3,7 @@
 	"description": "Compilation of fixes, QoL mods, etc for Tiberian Dawn",
 	"author": "Einkoro",
 	"load_order": 1,
-	"version_low": 2,
-	"version_high": 1,
+	"version_low": 1,
+	"version_high": 0,
 	"game_type": "TD"
 }
