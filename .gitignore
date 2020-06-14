@@ -1,6 +1,23 @@
+# Mod dist
+dist/*/Data/*.dll
+
+# CnC Remastered
 REDALERT/Win32/Release/*
 TIBERIANDAWN/Win32/Release/*
 bin/Win32/*
+
+# Visual Studio
 .vs/*
 *.VC.db
 *.user
+
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+# Thumbnails
+._*
