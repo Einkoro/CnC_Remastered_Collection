@@ -75,13 +75,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\bin\$(PlatformName)\</OutDir>
+    <OutDir>..\dist\Red_Alert\Data\</OutDir>
     <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\bin\$(PlatformName)\</OutDir>
+    <OutDir>..\dist\Red_Alert\Data\</OutDir>
     <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)I</TargetName>
   </PropertyGroup>

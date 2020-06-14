@@ -1,5 +1,8 @@
 # Mod dist
 dist/*/Data/*.dll
+dist/*/Data/*.exp
+dist/*/Data/*.lib
+dist/*/Data/*.pdb
 
 # CnC Remastered
 REDALERT/Win32/Release/*
