@@ -4639,6 +4639,10 @@ int BuildingClass::Mission_Repair(void)
 							Transmit_Message(RADIO_RUN_AWAY);
 						}
 #endif
+						// Tell unit to move away after repair completes
+						Transmit_Message(RADIO_RUN_AWAY);
+						Transmit_Message(RADIO_OVER_OUT);
+
 						Begin_Mode(BSTATE_IDLE);
 						Status = IDLE;
 #ifdef OBSOLETE

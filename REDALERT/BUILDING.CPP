@@ -4271,7 +4271,10 @@ int BuildingClass::Mission_Repair(void)
 							// if (IsOwnedByPlayer) Speak(VOX_UNIT_REPAIRED);
 							if (IsOwnedByPlayer) Speak(VOX_UNIT_REPAIRED, House);
 
-//							Transmit_Message(RADIO_RUN_AWAY);
+							// Tell unit to move away after repair completes
+							Transmit_Message(RADIO_RUN_AWAY);
+							Transmit_Message(RADIO_OVER_OUT);
+
 							Begin_Mode(BSTATE_IDLE);
 							Status = IDLE;
 							break;
