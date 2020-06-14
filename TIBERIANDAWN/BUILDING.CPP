@@ -1964,7 +1964,7 @@ void BuildingClass::Drop_Debris(TARGET source)
 		/*
 		**	Infantry could run out of a destroyed building.
 		*/
-		if (!House->IsToDie && !IsSurvivorless) {
+		if (!IsGoingToBlow && !House->IsToDie && !IsSurvivorless) {
 			InfantryClass * i = NULL;
 
 			if (Random_Pick(0, odds) == 1) {
