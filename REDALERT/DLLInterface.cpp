@@ -4960,9 +4960,11 @@ void DLLExportClass::Calculate_Placement_Distances(BuildingTypeClass* placement_
 		for (int x = 0; x < map_cell_width; x++) {
 			CELL cell = (CELL)map_cell_x + x + ((map_cell_y + y) << _map_width_shift_bits);
 			BuildingClass* base = (BuildingClass*)Map[cell].Cell_Find_Object(RTTI_BUILDING);
-			if ((base && base->House->Class->House == PlayerPtr->Class->House && base->Class->IsBase) ||
-				((placement_type->IsWall || ((Map[cell].Smudge != SMUDGE_NONE) && SmudgeTypeClass::As_Reference(Map[cell].Smudge).IsBib)) &&
-					Map[cell].Owner == PlayerPtr->Class->House)) {
+			//if ((base && base->House->Class->House == PlayerPtr->Class->House && base->Class->IsBase) ||
+			//	((placement_type->IsWall || ((Map[cell].Smudge != SMUDGE_NONE) && SmudgeTypeClass::As_Reference(Map[cell].Smudge).IsBib)) &&
+			//		Map[cell].Owner == PlayerPtr->Class->House)) {
+			// Allow building off walls
+			if ((base && base->House->Class->House == PlayerPtr->Class->House && base->Class->IsBase) || (Map[cell].Owner == PlayerPtr->Class->House)) {
 				placement_distance[cell] = 0U;
 				CELL startcell = cell;
 				for (unsigned char distance = 1U; distance <= (placement_type->Adjacent + 1U); distance++) {

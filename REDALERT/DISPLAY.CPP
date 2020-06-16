@@ -747,14 +747,14 @@ bool DisplayClass::Passes_Proximity_Check(ObjectTypeClass const * object, Houses
 				*/
 				//BG: Modified so only walls can be placed next to walls - buildings can't.
 				//JLB: Except for bibs, in which case buildings can be placed next to these.
-				if (building->IsWall ||
-					((*this)[newcell].Smudge != SMUDGE_NONE && SmudgeTypeClass::As_Reference((*this)[newcell].Smudge).IsBib)) {
-
+				// Allow building off walls
+				//if (building->IsWall ||
+				//	((*this)[newcell].Smudge != SMUDGE_NONE && SmudgeTypeClass::As_Reference((*this)[newcell].Smudge).IsBib)) {
 					if ((*this)[newcell].Owner == house) {
 						retval = true;
 						break;
 					}
-				}
+				//}
 
 				// we've found a building...
 				if (base != NULL && base->House->Class->House == house && base->Class->IsBase) {
@@ -772,14 +772,14 @@ bool DisplayClass::Passes_Proximity_Check(ObjectTypeClass const * object, Houses
 				for (FacingType newface = FACING_N; newface < FACING_COUNT; newface++) {
 					CELL	newercell = Adjacent_Cell(newcell, newface);
 
-					if (building->IsWall ||
-									((*this)[newercell].Smudge != SMUDGE_NONE && SmudgeTypeClass::As_Reference((*this)[newercell].Smudge).IsBib)) {
-
+					// Allow building off walls
+					//if (building->IsWall ||
+					//				((*this)[newercell].Smudge != SMUDGE_NONE && SmudgeTypeClass::As_Reference((*this)[newercell].Smudge).IsBib)) {
 						if ((*this)[newercell].Owner == house) {
 							retval = true;
 							break;
 						}
-					}
+					//}
 
 					TechnoClass * newbase = (*this)[newercell].Cell_Techno();
 
@@ -811,7 +811,8 @@ bool DisplayClass::Passes_Proximity_Check(ObjectTypeClass const * object, Houses
 		if (building->Adjacent > 1) {
 			for (int index = 0; index < Buildings.Count(); index++) {
 				BuildingClass * obj = Buildings.Ptr(index);
-				if (obj != NULL && !obj->IsInLimbo && obj->House->Class->House == house && obj->Class->IsBase) {
+				//if (obj != NULL && !obj->IsInLimbo && obj->House->Class->House == house && obj->Class->IsBase) {
+				if (obj != NULL && !obj->IsInLimbo && obj->House->Class->House == house) {
 					int centdist = ::Distance(obj->Center_Coord(), Cell_Coord(cell));
 					centdist /= CELL_LEPTON_W;
 					centdist -= (obj->Class->Width() + obj->Class->Height()) / 2;
