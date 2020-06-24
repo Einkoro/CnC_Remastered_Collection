@@ -743,6 +743,7 @@ void DisplayClass::Set_View_Dimensions(int x, int y, int width, int height)
  * HISTORY:                                                                                    *
  *   06/03/1994 JLB : Created.                                                                 *
  *   06/26/1995 JLB : Puts placement cursor into static buffer.                                *
+ *   04/29/2020 pchote : Updated for the "Modern Wall Building" mod.                           *
  *=============================================================================================*/
 void DisplayClass::Set_Cursor_Shape(short const * list)
 {
@@ -760,10 +761,85 @@ void DisplayClass::Set_Cursor_Shape(short const * list)
 		CursorSize = _list;
 		Get_Occupy_Dimensions (w, h, CursorSize);
 		ZoneOffset = -(((h/2)*MAP_CELL_W)+(w/2));
+
+		/*
+		** Add line-build cells to the building placement cursor.
+		** pchote - "Modern Wall Building" mod.
+		*/
+		LineBuildZoneCell = ZoneCell;
+		LineBuildSuppressed = DLL_Export_Get_Input_Key_State(KN_LCTRL);
+		BuildingTypeClass* btype = (BuildingTypeClass*)Map.PendingObject;
+		DirType cardinal[4] = { DIR_N, DIR_E, DIR_S, DIR_W };
+		if (btype != NULL && btype->IsWall && !LineBuildSuppressed)
+		{
+			OverlayTypeClass const& wall = OverlayTypeClass::As_Reference(btype->Overlay_Type());
+			int cursorLength = 1;
+			for (int i = 0; i < 4; i++)
+				Extend_Wall_Cursor_Shape(_list, cursorLength, wall, ZoneCell, cardinal[i], 5);
+
+			_list[cursorLength] = REFRESH_EOL;
+		}
+
 		Cursor_Mark(ZoneCell+ZoneOffset, true);
 	} else {
 		CursorSize = 0;
 	}
+}
+
+
+/***********************************************************************************************
+  * DisplayClass::Extend_Wall_Cursor_Shape -- Add line-build wall cells to the placement cursor *
+  *                                                                                             *
+  *    This routine implements the wall placement behaviour from OpenRA.                        *
+  *    Step outwards in a specified direction up to a specified number of cells.                *
+  *    If we encounter an overlay of the specified wall type, break and mark the intermediate   *
+  *    cells as valid wall locations. If a matching wall is not found, or we encounter an       *
+  *    obstacle, return without doing anything.                                                 *
+  *                                                                                             *
+  *                                                                                             *
+  * INPUT:   placementList       -- The CursorSize list to update                               *
+  *                                                                                             *
+  *          placementListLength -- The list tail to append to                                  *
+  *                                                                                             *
+  *          wall                -- Wall overlay type to search for                             *
+  *                                                                                             *
+  *          cell     -- The reference cell to check next to                                    *
+  *                                                                                             *
+  *          dir      -- The direction to step from the reference cell                          *
+  *                                                                                             *
+  *          step     -- The maximum number of steps to check for a connecting wall             *
+  *                                                                                             *
+  *                                                                                             *
+  * OUTPUT:  Was the cursor updated successfully updated?                                       *
+  *                                                                                             *
+  *                                                                                             *
+  * HISTORY:                                                                                    *
+  *   04/29/2020 pchote : Created for the "Modern Wall Building" mod.                           *
+  *=============================================================================================*/
+bool DisplayClass::Extend_Wall_Cursor_Shape(short* placementList, int& placementListLength, OverlayTypeClass const& wall, CELL cell, DirType dir, int step)
+{
+	// Step in the requested direction and abort if it is outside the map
+	CELL adjacent = Adjacent_Cell(cell, dir);
+	if (!Map.In_Radar(adjacent)) return false;
+
+	// Check whether the cell contains a connectable wall
+	OverlayType overlay = Map[adjacent].Overlay;
+	if (overlay == wall.Type) return true;
+
+	// Cell is blocked by something else
+	if (!Map[adjacent].Is_Generally_Clear()) return false;
+
+	// Cell does not contain a connectable wall. Does the next?
+	if (step > 1 && Extend_Wall_Cursor_Shape(placementList, placementListLength, wall, adjacent, dir, step - 1))
+	{
+		// The next cell does indeed have a wall
+		// Place our new connector and tell the caller that there is now a new connectable wall
+		placementList[placementListLength] = adjacent - ZoneCell - ZoneOffset;
+		placementListLength++;
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -1185,6 +1261,7 @@ void DisplayClass::Cursor_Mark(CELL pos, bool on)
  *   10/14/1994 JLB : Changing cursor shape over target.                                       *
  *   12/31/1994 JLB : Takes mouse coordinates as parameters.                                   *
  *   06/27/1995 JLB : Breaks out of rubber band mode if mouse leaves map.                      *
+ *   04/29/2020 pchote : Updated for the "Modern Wall Building" mod.                           *
  *=============================================================================================*/
 void DisplayClass::AI(KeyNumType & input, int x, int y)
 {
@@ -1198,6 +1275,15 @@ void DisplayClass::AI(KeyNumType & input, int x, int y)
 	}
 
 	MapClass::AI(input, x, y);
+
+	/*
+	** Force placement cursor to be reevaluated for line-buildings.
+	** pchote - "Modern Wall Building" mod.
+	*/
+	BuildingTypeClass* btype = (BuildingTypeClass*)Map.PendingObject;
+	bool lineBuildSuppressed = DLL_Export_Get_Input_Key_State(KN_LCTRL);
+	if (btype != NULL && btype->IsWall && (LineBuildZoneCell != ZoneCell || lineBuildSuppressed != LineBuildSuppressed))
+		Set_Cursor_Shape(PendingObject->Occupy_List());
 }
 
 
