@@ -750,6 +750,22 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 			break;
 
 		/*
+		**	Something bad has happened to the object in contact with. Abort any coordinated
+		**	activity with this object. Basically, ... run away! Run away!
+		*/
+		case RADIO_RUN_AWAY:
+			if (Class->IsToHarvest && In_Radio_Contact() && Mission == MISSION_ENTER) {
+				TechnoClass * contact = Contact_With_Whom();
+				if (contact->What_Am_I() == RTTI_BUILDING && *((BuildingClass*)contact) == STRUCT_REFINERY) {
+					// Slight hack; set a target so the harvest mission knows to skip to finding home state
+					Assign_Mission(MISSION_HARVEST);
+					TarCom = As_Target();
+					return(RADIO_ROGER);
+				}
+			}
+			return(DriveClass::Receive_Message(from, message, param));
+
+		/*
 		**	When this message is received, it means that the other object
 		**	has already turned its radio off. Turn this radio off as well.
 		*/
@@ -1198,6 +1214,7 @@ UnitClass::UnitClass(UnitType classid, HousesType house) :
 	Reload = 0;
 	Ammo = Class->MaxAmmo;
 	IsCloakable = Class->IsCloakable;
+	TiberiumUnloadRefinery = NULL;
 	if (Class->IsAnimating) Set_Rate(Options.Normalize_Delay(3));
 
 	/*
@@ -2345,29 +2362,47 @@ bool UnitClass::Goto_Tiberium(void)
 				int tiberium = 0;
 				int besttiberium = 0;
 				for (int x = -radius; x <= radius; x++) {
+
+					/*
+					**	Randomize the corners.
+					*/
+					int corner[2];
+					int corners[4][2] = {
+						{x, -radius},
+						{x, +radius},
+						{-radius, x},
+						{+radius, x}
+					};
+					for (int i = 0; i < 3; i++) {
+						int j = i + rand() / (RAND_MAX / (4 - i) + 1);
+						memcpy(&corner, &corners[j], sizeof(corner));
+						memcpy(&corners[j], &corners[i], sizeof(corner));
+						memcpy(&corners[i], corner, sizeof(corner));
+					}
+
 					cell = center;
-					tiberium = Tiberium_Check(cell, x, -radius);
+					tiberium = Tiberium_Check(cell, corners[0][0], corners[0][1]);
 					if (tiberium > besttiberium) {
 						bestcell = cell;
 						besttiberium = tiberium;
 					}
 
 					cell = center;
-					tiberium = Tiberium_Check(cell, x, +radius);
+					tiberium = Tiberium_Check(cell, corners[1][0], corners[1][1]);
 					if (tiberium > besttiberium) {
 						bestcell = cell;
 						besttiberium = tiberium;
 					}
 
 					cell = center;
-					tiberium = Tiberium_Check(cell, -radius, x);
+					tiberium = Tiberium_Check(cell, corners[2][0], corners[2][1]);
 					if (tiberium > besttiberium) {
 						bestcell = cell;
 						besttiberium = tiberium;
 					}
 
 					cell = center;
-					tiberium = Tiberium_Check(cell, +radius, x);
+					tiberium = Tiberium_Check(cell, corners[3][0], corners[3][1]);
 					if (tiberium > besttiberium) {
 						bestcell = cell;
 						besttiberium = tiberium;
@@ -2382,6 +2417,29 @@ bool UnitClass::Goto_Tiberium(void)
 	}
 
 	return(false);
+}
+
+
+BuildingClass* UnitClass::Find_Best_Refinery(void) const
+{
+	/*
+	**	Remember our last refinery and prefer that one, if still available and valid.
+	*/
+	if (TiberiumUnloadRefinery != NULL) {
+		if (TiberiumUnloadRefinery->House == House &&
+			!TiberiumUnloadRefinery->IsInLimbo &&
+			TiberiumUnloadRefinery->Mission != MISSION_DECONSTRUCTION &&
+			*TiberiumUnloadRefinery == STRUCT_REFINERY) {
+			return TiberiumUnloadRefinery;
+		} else {
+			TiberiumUnloadRefinery = NULL;
+		}
+	}
+
+	/*
+	**	Find nearby refinery and head to it?
+	*/
+	return Find_Docking_Bay(STRUCT_REFINERY, false);
 }
 
 
@@ -2739,9 +2797,9 @@ int UnitClass::Mission_Harvest(void)
 			if (!Target_Legal(NavCom)) {
 
 				/*
-				**	Find nearby refinery and head to it?
+				**	Find best refinery.
 				*/
-				BuildingClass * nearest = Find_Docking_Bay(STRUCT_REFINERY, false);
+				BuildingClass * nearest = Find_Best_Refinery();
 
 				/*
 				**	Since the refinery said it was ok to load, establish radio
@@ -2751,7 +2809,7 @@ int UnitClass::Mission_Harvest(void)
 					Status = HEADINGHOME;
 				} else {
 					ScenarioInit++;
-					nearest = Find_Docking_Bay(STRUCT_REFINERY, false);
+					nearest = Find_Best_Refinery();
 					ScenarioInit--;
 					if (nearest) {
 						Assign_Destination(::As_Target(nearest->Nearby_Location(this)));
@@ -2845,6 +2903,28 @@ int UnitClass::Mission_Hunt(void)
 		}
 	}
 	return(TICKS_PER_SECOND);
+}
+
+
+int UnitClass::Mission_Enter(void)
+{
+	Validate();
+	if (Class->IsToHarvest) {
+		TechnoClass * contact = Contact_With_Whom();
+		if (contact == NULL) {
+			contact = As_Techno(ArchiveTarget);
+		}
+		if (contact == NULL) {
+			contact = As_Techno(NavCom);
+		}
+		if (contact != NULL &&
+			contact->What_Am_I() == RTTI_BUILDING &&
+			*((BuildingClass*)contact) == STRUCT_REFINERY) {
+			TiberiumUnloadRefinery = (BuildingClass*)contact;
+		}
+	}
+
+	return(TarComClass::Mission_Enter());
 }
 
 

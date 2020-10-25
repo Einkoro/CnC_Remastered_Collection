@@ -1647,7 +1647,7 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	**	If the scan is limited to capturable buildings only, then bail if the examined
 	**	object isn't a capturable building.
 	*/
-	if ((method & THREAT_CAPTURE) && (otype != RTTI_BUILDING || !((BuildingTypeClass const *)tclass)->IsCaptureable)) {
+	if ((method & THREAT_CAPTURE) && (otype != RTTI_BUILDING || !object->Can_Capture())) {
 		BEnd(BENCH_EVAL_OBJECT);
 		return(false);
 	}
@@ -3378,6 +3378,13 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 			}
 		}
 
+		/*
+		** For electric zaps, immediately perform bullet logic.
+		*/
+		if (weapon->IsElectric) {
+			bullet->AI();
+		}
+
 #endif
 	}
 
@@ -3560,7 +3567,7 @@ ActionType TechnoClass::What_Action(ObjectClass const * object) const
 						((weapon != NULL) && weapon->Bullet->IsAntiAircraft) ||
 						(object->Is_Techno() && (((TechnoClass *)object)->Height == 0))) {
 						if (Can_Player_Move() || In_Range(object, primary)) {
-							if (In_Range(object, primary) || (What_Am_I() == RTTI_INFANTRY && ((InfantryClass *)this)->Class->IsCapture && object->What_Am_I() == RTTI_BUILDING && ((BuildingClass *)object)->Class->IsCaptureable)) {
+							if (In_Range(object, primary) || (What_Am_I() == RTTI_INFANTRY && ((InfantryClass *)this)->Class->IsCapture && object->What_Am_I() == RTTI_BUILDING && object->Can_Capture())) {
 								return(ACTION_ATTACK);
 							} else {
 								if (!Can_Player_Move()) {
@@ -6488,6 +6495,17 @@ int TechnoTypeClass::Time_To_Build(HousesType house) const
 		time *= hptr->BuildSpeedBias;
 	}
 	else {
+		
+		/*
+		** New feature - Turkey has a 10% build speed bonus even though it isn't specified in the rules
+		*/
+		if (hptr->ActLike == HOUSE_TURKEY) {
+			if (hptr->BuildSpeedBias == fixed(1)) {
+				time *= 9;
+				time /= 10;
+			}
+		}
+		
 		if (What_Am_I() == RTTI_BUILDINGTYPE || What_Am_I() == RTTI_INFANTRYTYPE) {
 			time *= hptr->BuildSpeedBias;
 		}
